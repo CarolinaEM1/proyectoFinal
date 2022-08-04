@@ -1,0 +1,270 @@
+package proyectofinal;
+import javax.swing.*;
+ import java.io.*;
+/**
+ *
+ * @author Carolina EM
+ */
+public class Materia extends Archivo {
+    String name_Arch="materia",name_M,clave;
+    long tam_Reg=49;
+    byte cred;
+    
+    @Override
+    void alta() {
+        String clav;
+        clav=JOptionPane.showInputDialog("Clave Materia: ");
+        clav=String.format("%-4s", clav);
+        buscar(clav);        
+        while(clav.equals(clave)){
+            clav=JOptionPane.showInputDialog("ADVERTENCIA\nClave de la materia existente");
+            clav=String.format("%-4s", clav);
+        }
+        clave=clav;
+        name_M=JOptionPane.showInputDialog("Nombre de la materia: ");
+        name_M=String.format("%-40s", name_M);
+        cred=Byte.parseByte(JOptionPane.showInputDialog("Creditos: "));
+        RandomAccessFile w;
+        try {
+            w=new RandomAccessFile(name_Arch+".dat","rw");            
+            w.seek(w.length());
+            w.writeUTF(clave);
+            w.writeUTF(name_M);
+            w.writeByte(cred);
+        } catch (IOException e) {
+            System.err.println(" Archivo no encontrado! ");
+        }
+    }
+
+   @Override
+    void reporte() {
+        RandomAccessFile r;       
+        PrintWriter pw=null;
+        try {
+            r=new RandomAccessFile(name_Arch+".dat","r");
+            pw=new PrintWriter(name_Arch+".txt");            
+            r.seek(0);
+            String men="";
+            System.out.println("Tamaño del archivo: "+r.length());
+            System.out.println("Registros: "+r.length()/tam_Reg);
+            pw.println("                     |  MATERIAS REGISTRADAS  |                          \n\n");
+            pw.println("-----------------------------------------------------------------------");
+            pw.println("Clave Materia\tNombre Materia\t\t\t\t    Creditos");
+            pw.println("-----------------------------------------------------------------------");
+            for (long i=0;i<r.length();i+=tam_Reg) {
+                men=String.format("\t%-6s\t %-42s%-2d", r.readUTF(), r.readUTF(),r.readByte());
+                pw.println(men);
+            }                        
+            r.close();
+        } catch (IOException e) {
+            System.err.println("Archivo no encontrado "+e.toString());
+        } finally{
+            if(pw!=null){
+                pw.close();
+            }
+        }
+    }
+
+    @Override
+    void ordenar() {
+        RandomAccessFile wr;
+        Materia mat=new Materia();
+        Materia aux=new Materia();
+        int nR;
+        try{
+            wr=new RandomAccessFile(name_Arch+".dat","rw");
+            wr.seek(0);
+            nR=(int)(wr.length()/tam_Reg);
+            for(int p=1;p<nR;p++){//Pasadas
+                for(int c=1;c<=(nR-1);c++){//Comparaciones
+                    mat=lectura(wr,c-1);
+                    aux=lectura(wr,c);
+                    if(mat.clave.compareToIgnoreCase(aux.clave)>0){
+                        escritura(aux,wr,c-1);
+                        escritura(mat,wr,c);
+                    }
+                }
+            }
+            wr.close();            
+        }catch(IOException e){
+            System.err.println("Archivo no encontrado");
+        }
+    }
+    
+    public Materia lectura(RandomAccessFile wr, int c) {
+        Materia mat=new Materia();
+        try{
+            wr.seek(c*tam_Reg);
+            mat.clave=wr.readUTF();
+            mat.name_M=wr.readUTF();
+            mat.cred=wr.readByte();
+        }catch(Exception e){
+            System.err.println("Proceso fallido(Lectura)! ");
+        }
+        return mat;
+    }
+    
+    private void escritura(Materia mat, RandomAccessFile wr, int c) {
+        try {
+            wr.seek(c*tam_Reg);
+            wr.writeUTF(mat.clave);
+            wr.writeUTF(mat.name_M);
+            wr.writeByte(mat.cred);
+        } catch (Exception e) {
+            System.err.println("Proceso fallido(escritura)! ");
+        }
+    }
+
+    @Override
+    void buscar(String m) {
+        String men,nCa;
+        long li=0,ls,pm;        
+        m=String.format("%-4s", m);
+        RandomAccessFile b;
+        Materia mat=new Materia();
+        try {
+            b=new RandomAccessFile(name_Arch+".dat","r");            
+            ls=b.length()/tam_Reg-1;            
+            do {                
+                pm=(li+ls)/2;
+                b.seek(pm*tam_Reg);
+                mat.clave=b.readUTF();
+                mat.name_M=b.readUTF();
+                mat.cred=b.readByte();              
+                if(mat.clave.compareTo(m)>0){
+                    ls=pm-1;
+                }else{
+                    li=pm+1;
+                }              
+            } while (!mat.clave.equals(m)&&li<=ls);                        
+            if (mat.clave.equals(m)) {
+                men=String.format("%-6s\t\t%-42s%-2d", mat.clave, mat.name_M, mat.cred);                 
+                JOptionPane.showMessageDialog(null, "Encontrado, si existe \n"+men);                                 
+                this.clave=mat.clave;
+                this.name_M=mat.name_M;
+                this.cred=mat.cred;
+            }else{
+                JOptionPane.showMessageDialog(null, " No encontrado, NO existe ");              
+            }
+            b.close();
+        } catch (IOException e) {
+            System.err.println("Fallo en el archivo");
+        }
+    }
+
+    @Override
+    void modificar() {
+        RandomAccessFile mo;
+        String m,nm,men,name;
+        byte credi;
+        long li=0,ls,pm;
+        Materia mat=new Materia();
+        try {            
+            mo=new RandomAccessFile(name_Arch+".dat","rw");
+            m=JOptionPane.showInputDialog("Clave de materia a modificar: ");
+            m=String.format("%-4s", m);            
+            ls=mo.length()/tam_Reg-1;            
+            do {                
+                pm=(li+ls)/2;
+                mo.seek(pm*tam_Reg);
+                mat.clave=mo.readUTF();
+                mat.name_M=mo.readUTF();
+                mat.cred=mo.readByte();              
+                if(mat.clave.compareTo(m)>0){
+                    ls=pm-1;
+                }else{
+                    li=pm+1;
+                }
+            } while (!mat.clave.equals(m)&&li<=ls);
+            if (mat.clave.equals(m)) {
+                men=String.format("%-6s\t\t%-42s%-2d", mat.clave, mat.name_M, mat.cred);                 
+                JOptionPane.showMessageDialog(null, "Encontrado, si existe: \n"+men);  
+                men="¿Qué desea modificar?\n"+
+                        "1.Clave\n"+
+                        "2.Nombre\n"+
+                        "3.Creditos\n";
+                int res; 
+                boolean b=true;
+                do {                    
+                    res=Integer.parseInt(JOptionPane.showInputDialog(men));
+                    switch(res){
+                        case 1:
+                            nm=JOptionPane.showInputDialog("Clave Materia nueva: ");
+                            nm=String.format("%-4s", nm);
+                            mo.seek(pm*tam_Reg);
+                            mo.writeUTF(nm);
+                            b=false;
+                            break;
+                        case 2:
+                            name=JOptionPane.showInputDialog("Nombre nuevo: ");
+                            name=String.format("%-40s", name);
+                            mo.seek(pm*tam_Reg+6);
+                            mo.writeUTF(name);
+                            b=false;
+                            break;
+                        case 3:
+                            credi=Byte.parseByte(JOptionPane.showInputDialog("Creditos nuevos: "));
+                            mo.seek(pm*tam_Reg+48);
+                            mo.writeByte(credi);
+                            b=false;
+                            break;                            
+                        default:
+                            JOptionPane.showMessageDialog(null, "  ERROR!!. \nDato no valido");
+                            break;
+                    }
+                } while (b);
+                
+            }else{
+                JOptionPane.showMessageDialog(null, " No encontrado, NO existe! ");              
+            }
+            mo.close();
+        } catch (IOException e) {
+            System.err.println("Fallo en el archivo!");
+        }
+    }
+
+    @Override
+    void menu() {
+        int  opc,rep=0;
+        boolean b=true;
+        String menu;
+        menu="\tMenú de opciones\n"+"Seleccione una opción:\n"+
+            "1.- Alta\n"+
+            "2.- Generar Reporte\n"+
+            "3.- Ordenar\n"+ 
+            "4.- Buscar\n"+ 
+            "5.-Modificar\n"+
+            "6.-Regresar a menú principal\n";
+        do{
+            opc=Integer.parseInt(JOptionPane.showInputDialog(menu));
+            switch(opc){
+                case 1:
+                    alta();
+                    break;
+                case 2:
+                    reporte();
+                    break;
+                case 3:
+                    ordenar();
+                    JOptionPane.showMessageDialog(null, "Proceso concluido,Materia(Genera un reporte)");
+                    break;
+                case 4:
+                    String m=JOptionPane.showInputDialog(" Clave Materia a buscar: ");
+                    buscar(m);
+                    break;
+                case 5:
+                    modificar();
+                    break;
+                case 6:
+                    b=false;
+                    break;
+                default:
+                    JOptionPane.showMessageDialog(null, "ERROR !!! \nDATO NO VALIDO", "Advertencia", 0);
+                    rep++;
+                    break;
+            }
+        }while(b);
+    }
+
+    
+}

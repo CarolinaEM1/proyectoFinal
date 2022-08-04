@@ -1,0 +1,17 @@
+package proyectofinal;
+
+/**
+ *
+ * @author Carolina EM
+ */
+public abstract class Archivo {
+    long tam_Reg;
+    String name_Arch;
+    
+    abstract void alta();
+    abstract void reporte();
+    abstract void ordenar();
+    abstract void buscar(String nC);
+    abstract void modificar();
+    abstract void menu();
+}

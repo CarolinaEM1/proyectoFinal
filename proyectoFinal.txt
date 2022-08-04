@@ -1,0 +1,61 @@
+PROYECTO FINAL
+
+package proyectofinal;
+
+import javax.swing.JOptionPane;
+
+/**
+ *
+ * @author Carolina EM
+ */
+public class ProyectoFinal {
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+        int  opc,rep=0;
+        boolean b=true;
+        String menu;
+        menu="\tMenú de opciones\n"+"Seleccione una opción:\n"+
+        "1.- Alumno\n"+
+        "2.- Materias\n"+
+        "3.- Inscripcion\n"+
+        "4.- Carga Academica\n"+
+        "5.- Salida\n";
+        Alumno al;
+        Materia mat;
+        Inscripcion i;
+        do{
+            opc=Integer.parseInt(JOptionPane.showInputDialog(menu));
+            switch(opc){
+                case 1:
+                    al=new Alumno();
+                    al.menu();
+                    break;
+                case 2:
+                    mat=new Materia();
+                    mat.menu();
+                    break;
+                case 3:
+                    i=new Inscripcion();
+                    i.Inscripciones();
+                    i.reporte();
+                    i.ordenar();
+                    break;
+                case 4:
+                    i=new Inscripcion();
+                    i.CargaAc();
+                    break;
+                 case 5:
+                    b=false;
+                    break;
+                default:
+                    JOptionPane.showMessageDialog(null, "ERROR !!! \nDATO NO VALIDO", "Advertencia", 0);
+                    rep++;
+                    break;
+            }
+        }while(b);
+        System.exit(0);
+    }
+}

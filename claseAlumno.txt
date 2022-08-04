@@ -1,0 +1,269 @@
+package proyectofinal;
+import javax.swing.*;
+import java.io.*;
+/**
+ *
+ * @author Carolina EM
+ */
+public class Alumno {
+    String name_Arch="alumno",name_Al,no_Ctrl;
+    long tam_Reg=53;
+    byte sem;
+    
+    void alta() {   
+        String nC;
+        RandomAccessFile w; 
+        nC=JOptionPane.showInputDialog("No. de control del Alumno: ");
+        nC=String.format("%-8s", nC);
+        buscar(nC);
+        while(nC.equals(this.no_Ctrl)){
+            nC=JOptionPane.showInputDialog("ADVERTENCIA\nNo. de control del alumno existente!!");
+            nC=String.format("%-8s", nC);
+        }
+        name_Al=JOptionPane.showInputDialog("Nombre del Alumno: ");
+        name_Al=String.format("%-40s", name_Al);
+        sem=Byte.parseByte(JOptionPane.showInputDialog("Semestre: "));        
+        try {
+            w=new RandomAccessFile(name_Arch+".dat","rw"); 
+            no_Ctrl=nC;
+            w.seek(w.length());
+            w.writeUTF(no_Ctrl);
+            w.writeUTF(name_Al);
+            w.writeByte(sem);
+        } catch (IOException e) {
+            System.err.println(" Archivo no encontrado!! ");
+        }
+    }
+
+
+    void reporte() {
+        RandomAccessFile r;       
+        PrintWriter pw=null;
+        try {
+            r=new RandomAccessFile(name_Arch+".dat","r");
+            pw=new PrintWriter(name_Arch+".txt");            
+            r.seek(0);
+            String men="";
+            System.out.println("Tamaño del archivo: "+r.length());
+            System.out.println("Registros: "+r.length()/tam_Reg);
+            pw.println("                     | ALUMNOS REGISTRADOS |                       \n\n");
+            pw.println("-----------------------------------------------------------------------");
+            pw.println("No. de control\tNombre\t\t\t\t\t   Semestre");
+            pw.println("-----------------------------------------------------------------------");
+            for (long i=0;i<r.length();i+=tam_Reg) {
+                men=String.format(" %-10s\t %-42s%-2d", r.readUTF(), r.readUTF(),r.readByte());
+                pw.println(men);
+            }                        
+            r.close();
+        } catch (IOException e) {
+            System.err.println("Archivo no encontrado ! "+e.toString());
+        } finally{
+            if(pw!=null){
+                pw.close();
+            }
+        }
+    }
+
+
+    void ordenar() {
+        RandomAccessFile wr;
+        Alumno al=new Alumno();
+        Alumno aux=new Alumno();
+        int nR;
+        try{
+            wr=new RandomAccessFile(name_Arch+".dat","rw");
+            wr.seek(0);
+            nR=(int)(wr.length()/tam_Reg);
+            for(int p=1;p<nR;p++){//Pasadas
+                for(int c=1;c<=(nR-1);c++){//Comparaciones
+                    al=lectura(wr,c-1);
+                    aux=lectura(wr,c);
+                    if(al.no_Ctrl.compareToIgnoreCase(aux.no_Ctrl)>0){
+                        escritura(aux,wr,c-1);
+                        escritura(al,wr,c);
+                    }
+                }
+            }
+            wr.close();            
+        }catch(IOException e){
+            System.err.println(" Archivo no encontrado!! ");
+        }
+    }
+    
+    public Alumno lectura(RandomAccessFile wr, int c) {
+        Alumno al=new Alumno();
+        try{
+            wr.seek(c*tam_Reg);
+            al.no_Ctrl=wr.readUTF();
+            al.name_Al=wr.readUTF();
+            al.sem=wr.readByte();
+        }catch(Exception e){
+            System.err.println(" Proceso fallido(Lectura)!! ");
+        }
+        return al;
+    }
+    
+    private void escritura(Alumno al, RandomAccessFile wr, int c) {
+        try {
+            wr.seek(c*tam_Reg);
+            wr.writeUTF(al.no_Ctrl);
+            wr.writeUTF(al.name_Al);
+            wr.writeByte(al.sem);
+        } catch (Exception e) {
+            System.err.println(" Proceso fallido(escritura)!! ");
+        }
+    }
+
+    
+    void buscar(String nC) {
+        String men,nCa;
+        long li=0,ls,pm,by;        
+        nC=String.format("%-8s", nC);
+        RandomAccessFile b;
+        Alumno al=new Alumno();
+        try {
+            b=new RandomAccessFile(name_Arch+".dat","r");            
+            ls=b.length()/tam_Reg-1;            
+            do {                
+                pm=(li+ls)/2;
+                b.seek(pm*tam_Reg);
+                al.no_Ctrl=b.readUTF();
+                al.name_Al=b.readUTF();
+                al.sem=b.readByte();              
+                if(al.no_Ctrl.compareTo(nC)>0){
+                    ls=pm-1;
+                }else{
+                    li=pm+1;
+                }
+                
+            } while (!al.no_Ctrl.equals(nC)&&li<=ls);
+            //System.out.println(al.no_Ctrl+"--"+nC+"--");
+            if (al.no_Ctrl.equals(nC)) {
+                men=String.format("%-10s\t\t%-42s%-2d", al.no_Ctrl, al.name_Al,al.sem);                 
+                JOptionPane.showMessageDialog(null, "Encontrado, si existe\n"+men);                                                 
+                this.no_Ctrl=nC;
+                this.name_Al=al.name_Al;
+                this.sem=al.sem;
+            }else{
+                JOptionPane.showMessageDialog(null, "No encontrado, no existe");
+            }
+            b.close();
+        } catch (IOException e) {
+            System.err.println("Fallo en el archivo");
+        }
+    }
+
+ 
+    void modificar() {
+        RandomAccessFile mo;
+        String nC,nnC,men,name;
+        byte seme;
+        long li=0,ls,pm;
+        Alumno al=new Alumno();
+        try {            
+            mo=new RandomAccessFile(name_Arch+".dat","rw");
+            nC=JOptionPane.showInputDialog("No.control del alumno a modificar: ");
+            nC=String.format("%-8s", nC);            
+            ls=mo.length()/tam_Reg-1;            
+            do {                
+                pm=(li+ls)/2;
+                mo.seek(pm*tam_Reg);
+                al.no_Ctrl=mo.readUTF();
+                al.name_Al=mo.readUTF();
+                al.sem=mo.readByte();              
+                if(al.no_Ctrl.compareTo(nC)>0){
+                    ls=pm-1;
+                }else{
+                    li=pm+1;
+                }
+            } while (!al.no_Ctrl.equals(nC)&&li<=ls);
+            if (al.no_Ctrl.equals(nC)) {
+                men=String.format("%-10s\t\t%-42s%-2d", al.no_Ctrl, al.name_Al,al.sem);                 
+                JOptionPane.showMessageDialog(null, "Encontrado, si existe \n"+men);
+                men="¿Qué desea modificar?\n"+
+                        "1.No. de control\n"+
+                        "2.Nombre\n"+
+                        "3.Semestre\n";
+                int res; 
+                boolean b=true;
+                do {                    
+                    res=Integer.parseInt(JOptionPane.showInputDialog(men));
+                    switch(res){
+                        case 1:
+                            nnC=JOptionPane.showInputDialog("No.control nuevo: ");
+                            nnC=String.format("%-8s", nnC);
+                            mo.seek(pm*tam_Reg);
+                            mo.writeUTF(nnC);
+                            b=false;
+                            break;
+                        case 2:
+                            name=JOptionPane.showInputDialog("Nombre nuevo: ");
+                            name=String.format("%-40s", name);
+                            mo.seek(pm*tam_Reg+10);
+                            mo.writeUTF(name);
+                            b=false;
+                            break;
+                        case 3:
+                            seme=Byte.parseByte(JOptionPane.showInputDialog("Semestre nuevo: "));
+                            mo.seek(pm*tam_Reg+52);
+                            mo.writeByte(seme);
+                            b=false;
+                            break;                            
+                        default:
+                            JOptionPane.showMessageDialog(null, "ERROR!! \n!!!DATO NO VALIDO!!!");
+                            break;
+                    }
+                } while (b);
+                
+            }else{
+                JOptionPane.showMessageDialog(null, "NO ENCONTRADO!!! \nDATO NO EXISTE", "Advertencia", 0);              
+            }
+            mo.close();
+        } catch (IOException e) {
+            System.err.println(" Fallo en el archivo! ");
+        }
+    }
+
+
+    void menu() {
+        int  opc,rep=0;
+        boolean b=true;
+        String menu;
+        menu="\tMenú de opciones\n"+"Seleccione una opción:\n"+
+            "1.- Alta\n"+
+            "2.- Generar Reporte\n"+
+            "3.- Ordenar\n"+ 
+            "4.- Buscar\n"+ 
+            "5.-Modificar\n"+
+            "6.-Regresar a menú principal\n";
+        do{
+            opc=Integer.parseInt(JOptionPane.showInputDialog(menu));
+            switch(opc){
+                case 1:
+                    alta();
+                    break;
+                case 2:
+                    reporte();
+                    break;
+                case 3:
+                    ordenar();
+                    JOptionPane.showMessageDialog(null, "Proceso concluido, Alumnos(Genera un reporte)");
+                    break;
+                case 4:
+                    String nC=JOptionPane.showInputDialog("Número de control del alumno que desea buscar: ");
+                    buscar(nC);
+                    break;
+                case 5:
+                    modificar();
+                    break;
+                case 6:
+                    b=false;
+                    break;
+                default:
+                    JOptionPane.showMessageDialog(null, "ERROR !!! \nDATO NO VALIDO", "Advertencia", 0);
+                    rep++;
+                    break;
+            }
+        }while(b);
+    }
+}
